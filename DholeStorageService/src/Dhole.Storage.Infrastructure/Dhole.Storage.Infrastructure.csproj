@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+   <ItemGroup>
+    <PackageReference Include="CustomCodeFramework.Core" Version="0.2.0" />
+    <PackageReference Include="CustomCodeFramework.Messaging" Version="0.2.0" />
+    <PackageReference Include="CustomCodeFramework.Auth" Version="0.2.0" />
+    <PackageReference Include="CustomCodeFramework.Auth.Redis" Version="0.2.0" />
+    <PackageReference Include="CustomCodeFramework.Redis" Version="0.2.0" />
+    <PackageReference Include="CustomCodeFramework.Redis.Streams" Version="0.2.0" />
+    <PackageReference Include="CustomCodeFramework.Mongo" Version="0.2.0" />
+    <PackageReference Include="CustomCodeFramework.Storage" Version="0.2.0" />
+  <PackageReference Include="CustomCodeFramework.Storage.Local" Version="0.2.0" />
+  <PackageReference Include="CustomCodeFramework.Storage.S3" Version="0.2.0" />
+  <PackageReference Include="CustomCodeFramework.Storage.AzureBlob" Version="0.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dhole.Storage.Application\Dhole.Storage.Application.csproj" />
+    <ProjectReference Include="..\Dhole.Storage.Contracts\Dhole.Storage.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
