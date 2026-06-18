@@ -9,6 +9,7 @@ using Dhole.Storage.Application.Providers.GetStorageProvidersForSelect;
 using Dhole.Storage.Application.Providers.InactivateStorageProvider;
 using Dhole.Storage.Application.Providers.UpdateStorageProvider;
 using Dhole.Storage.Contracts.Providers;
+using Dhole.Storage.Api.Extensions;
 
 namespace Dhole.Storage.Api.Endpoints;
 
@@ -30,7 +31,7 @@ public static class ProviderEndpoints
             ) =>
             {
                 var result = await dispatcher.DispatchAsync(
-                    new CreateStorageProviderCommand(request, CreatedBy: null),
+                    new CreateStorageProviderCommand(request, CreatedBy: httpContext.GetCurrentUserId()),
                     cancellationToken
                 );
 
@@ -111,7 +112,7 @@ public static class ProviderEndpoints
             ) =>
             {
                 var result = await dispatcher.DispatchAsync(
-                    new UpdateStorageProviderCommand(id, request, UpdatedBy: null),
+                    new UpdateStorageProviderCommand(id, request, UpdatedBy: httpContext.GetCurrentUserId()),
                     cancellationToken
                 );
 
@@ -129,7 +130,7 @@ public static class ProviderEndpoints
             ) =>
             {
                 var result = await dispatcher.DispatchAsync(
-                    new ActivateStorageProviderCommand(id, ActivatedBy: null),
+                    new ActivateStorageProviderCommand(id, ActivatedBy: httpContext.GetCurrentUserId()),
                     cancellationToken
                 );
 
@@ -147,7 +148,7 @@ public static class ProviderEndpoints
             ) =>
             {
                 var result = await dispatcher.DispatchAsync(
-                    new InactivateStorageProviderCommand(id, InactivatedBy: null),
+                    new InactivateStorageProviderCommand(id, InactivatedBy: httpContext.GetCurrentUserId()),
                     cancellationToken
                 );
 
@@ -165,7 +166,7 @@ public static class ProviderEndpoints
             ) =>
             {
                 var result = await dispatcher.DispatchAsync(
-                    new DeleteStorageProviderCommand(id, DeletedBy: null),
+                    new DeleteStorageProviderCommand(id, DeletedBy: httpContext.GetCurrentUserId()),
                     cancellationToken
                 );
 

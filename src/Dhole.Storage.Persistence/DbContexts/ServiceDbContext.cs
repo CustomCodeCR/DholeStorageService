@@ -4,6 +4,7 @@ using CustomCodeFramework.Messaging.Inbox;
 using CustomCodeFramework.Messaging.Outbox;
 using CustomCodeFramework.Postgres.EntityFramework.Configurations;
 using CustomCodeFramework.Postgres.EntityFramework.DbContexts;
+using Dhole.Storage.Persistence.Auditing;
 using Dhole.Storage.Domain.Files.Entities;
 using Dhole.Storage.Domain.Providers.Entities;
 using Dhole.Storage.Persistence.Messaging;
@@ -123,16 +124,16 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
         var auditPayload = new
         {
             EventId = originalEventId,
-            CorrelationId = Guid.NewGuid(),
+            CorrelationId = AuditExecutionContextAccessor.Current?.CorrelationId ?? Guid.NewGuid(),
             SourceService = sourceService,
             EntityType = entityType,
             EntityId = entityId,
             Action = action,
             EventType = eventName,
-            UserId = userId,
-            UserName = (string?)null,
-            IpAddress = (string?)null,
-            UserAgent = (string?)null,
+            UserId = userId ?? AuditExecutionContextAccessor.Current?.UserId,
+            UserName = AuditExecutionContextAccessor.Current?.UserName,
+            IpAddress = AuditExecutionContextAccessor.Current?.IpAddress,
+            UserAgent = AuditExecutionContextAccessor.Current?.UserAgent,
             OccurredAt = DateTime.UtcNow,
             BeforeJson = (string?)null,
             AfterJson = (string?)null,
@@ -193,13 +194,22 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
 
     private static Guid? ResolveEntityId(object domainEvent)
     {
-        var property = domainEvent
-            .GetType()
-            .GetProperties()
-            .FirstOrDefault(x =>
-                x.Name.EndsWith("Id", StringComparison.OrdinalIgnoreCase)
-                && x.PropertyType == typeof(Guid)
-            );
+        var properties = domainEvent.GetType().GetProperties();
+
+        var exactEntityIdProperty = properties.FirstOrDefault(x =>
+            x.Name.Equals("EntityId", StringComparison.OrdinalIgnoreCase)
+            && x.PropertyType == typeof(Guid)
+        );
+
+        if (exactEntityIdProperty?.GetValue(domainEvent) is Guid exactEntityId)
+        {
+            return exactEntityId;
+        }
+
+        var property = properties.FirstOrDefault(x =>
+            x.Name.EndsWith("Id", StringComparison.OrdinalIgnoreCase)
+            && x.PropertyType == typeof(Guid)
+        );
 
         return property?.GetValue(domainEvent) is Guid value ? value : null;
     }

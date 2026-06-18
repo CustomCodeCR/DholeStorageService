@@ -7,6 +7,7 @@ using Dhole.Storage.Application.Files.GetFiles;
 using Dhole.Storage.Application.Files.GetFilesForSelect;
 using Dhole.Storage.Application.Files.UploadFile;
 using Dhole.Storage.Contracts.Files;
+using Dhole.Storage.Api.Extensions;
 
 namespace Dhole.Storage.Api.Endpoints;
 
@@ -83,7 +84,7 @@ public static class StorageEndpoints
                             file.ContentType,
                             file.Length,
                             stream,
-                            CreatedBy: null
+                            CreatedBy: httpContext.GetCurrentUserId()
                         ),
                         cancellationToken
                     );
@@ -203,7 +204,7 @@ public static class StorageEndpoints
             ) =>
             {
                 var result = await dispatcher.DispatchAsync(
-                    new DeleteFileCommand(id, DeletedBy: null),
+                    new DeleteFileCommand(id, DeletedBy: httpContext.GetCurrentUserId()),
                     cancellationToken
                 );
 

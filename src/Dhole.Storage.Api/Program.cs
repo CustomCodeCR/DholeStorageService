@@ -1,6 +1,7 @@
 using CustomCodeFramework.Api.DependencyInjection;
 using CustomCodeFramework.Api.Swagger;
 using CustomCodeFramework.Core.Abstractions;
+using Dhole.Storage.Api.Middleware;
 using Dhole.Storage.Api.Endpoints;
 using Dhole.Storage.Application.DependencyInjection;
 using Dhole.Storage.Infrastructure.DependencyInjection;
@@ -27,7 +28,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseAuthentication();
+app.UseMiddleware<AuditExecutionContextMiddleware>();
 app.UseAuthorization();
+app.UseMiddleware<AuditEndpointMiddleware>();
 
 app.MapStorageEndpoints();
 app.MapProviderEndpoints();
