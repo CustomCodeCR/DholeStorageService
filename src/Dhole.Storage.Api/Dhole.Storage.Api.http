@@ -1,0 +1,54 @@
+@host = http://localhost:5207
+@fileId = 00000000-0000-0000-0000-000000000000
+@entityId = 11111111-1111-1111-1111-111111111111
+
+GET {{host}}/health
+Accept: application/json
+
+###
+
+GET {{host}}/api/v1/storage/providers
+Accept: application/json
+
+###
+
+# En clientes REST compatibles, reemplace ./sample.pdf por un archivo existente.
+POST {{host}}/api/v1/storage/files
+Content-Type: multipart/form-data; boundary=StorageBoundary
+
+--StorageBoundary
+Content-Disposition: form-data; name="sourceService"
+
+DholeDataExtractionService
+--StorageBoundary
+Content-Disposition: form-data; name="entityType"
+
+ExtractionExecutionSource
+--StorageBoundary
+Content-Disposition: form-data; name="entityId"
+
+{{entityId}}
+--StorageBoundary
+Content-Disposition: form-data; name="metadataJson"
+
+{"kind":"PricingImportSource"}
+--StorageBoundary
+Content-Disposition: form-data; name="file"; filename="sample.pdf"
+Content-Type: application/pdf
+
+< ./sample.pdf
+--StorageBoundary--
+
+###
+
+GET {{host}}/api/v1/storage/files/{{fileId}}
+Accept: application/json
+
+###
+
+GET {{host}}/api/v1/storage/files/{{fileId}}/content
+
+###
+
+GET {{host}}/api/v1/storage/files/by-entity?sourceService=DholeDataExtractionService&entityType=ExtractionExecutionSource&entityId={{entityId}}
+Accept: application/json
