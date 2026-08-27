@@ -1,5 +1,6 @@
 using CustomCodeFramework.Core.Abstractions;
 using Dhole.Storage.Api.Endpoints;
+using Dhole.Storage.Api.Middleware;
 using Dhole.Storage.Api.Services;
 using Dhole.Storage.Application.DependencyInjection;
 using Dhole.Storage.Infrastructure.DependencyInjection;
@@ -58,6 +59,7 @@ var app = builder.Build();
 app.UseCors(CorsPolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<AuditEndpointMiddleware>();
 
 app.MapGet(
     "/health",
