@@ -58,6 +58,7 @@ var app = builder.Build();
 
 app.UseCors(CorsPolicyName);
 app.UseAuthentication();
+app.UseMiddleware<AuditExecutionContextMiddleware>();
 app.UseAuthorization();
 app.UseMiddleware<AuditEndpointMiddleware>();
 
