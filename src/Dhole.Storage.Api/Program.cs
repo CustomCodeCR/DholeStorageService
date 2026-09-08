@@ -79,6 +79,7 @@ app.MapGet(
 ).AllowAnonymous();
 
 app.MapStorageEndpoints();
+app.MapStorageEnvironmentEndpoints();
 
 using (var scope = app.Services.CreateScope())
 {
