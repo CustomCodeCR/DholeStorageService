@@ -36,7 +36,26 @@ public sealed class S3StorageObjectStore : IStorageObjectStore
             AutoCloseStream = false,
         };
 
-        await client.PutObjectAsync(request, cancellationToken);
+        try
+        {
+            await client.PutObjectAsync(request, cancellationToken);
+        }
+        catch (AmazonS3Exception exception) when (
+            options.CreateBucketIfMissing && IsMissingBucket(exception)
+        )
+        {
+            await client.PutBucketAsync(
+                new PutBucketRequest { BucketName = options.BucketName },
+                cancellationToken
+            );
+
+            if (content.CanSeek)
+            {
+                content.Position = 0;
+            }
+
+            await client.PutObjectAsync(request, cancellationToken);
+        }
 
         if (content.CanSeek)
         {
@@ -147,9 +166,32 @@ public sealed class S3StorageObjectStore : IStorageObjectStore
             config.RegionEndpoint = RegionEndpoint.GetBySystemName(options.Region.Trim());
         }
 
-        if (!string.IsNullOrWhiteSpace(options.AccessKey))
+        var accessKey = ResolveValue(options.AccessKey, options.AccessKeyReference);
+        var secretKey = ResolveValue(options.SecretKey, options.SecretKeyReference);
+
+        if (
+            !string.IsNullOrWhiteSpace(options.AccessKeyReference)
+            && string.IsNullOrWhiteSpace(accessKey)
+        )
         {
-            if (string.IsNullOrWhiteSpace(options.SecretKey))
+            throw new InvalidOperationException(
+                $"No se encontró la variable de ambiente '{options.AccessKeyReference}' requerida por el proveedor S3/MinIO."
+            );
+        }
+
+        if (
+            !string.IsNullOrWhiteSpace(options.SecretKeyReference)
+            && string.IsNullOrWhiteSpace(secretKey)
+        )
+        {
+            throw new InvalidOperationException(
+                $"No se encontró la variable de ambiente '{options.SecretKeyReference}' requerida por el proveedor S3/MinIO."
+            );
+        }
+
+        if (!string.IsNullOrWhiteSpace(accessKey))
+        {
+            if (string.IsNullOrWhiteSpace(secretKey))
             {
                 throw new InvalidOperationException(
                     "La configuración S3 contiene AccessKey, pero no SecretKey."
@@ -157,12 +199,35 @@ public sealed class S3StorageObjectStore : IStorageObjectStore
             }
 
             return new AmazonS3Client(
-                new BasicAWSCredentials(options.AccessKey.Trim(), options.SecretKey.Trim()),
+                new BasicAWSCredentials(accessKey, secretKey),
                 config
             );
         }
 
         return new AmazonS3Client(config);
+    }
+
+    private static string? ResolveValue(string? directValue, string? environmentReference)
+    {
+        if (!string.IsNullOrWhiteSpace(directValue))
+        {
+            return directValue.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(environmentReference))
+        {
+            return null;
+        }
+
+        var value = Environment.GetEnvironmentVariable(environmentReference.Trim());
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static bool IsMissingBucket(AmazonS3Exception exception)
+    {
+        return (int)exception.StatusCode == 404
+            || string.Equals(exception.ErrorCode, "NoSuchBucket", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(exception.ErrorCode, "NotFound", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string NormalizePath(string path) => path.Replace('\\', '/').TrimStart('/');
