@@ -43,8 +43,11 @@ internal sealed class S3ProviderOptions
     public string? Region { get; init; }
     public string? AccessKey { get; init; }
     public string? SecretKey { get; init; }
+    public string? AccessKeyReference { get; init; }
+    public string? SecretKeyReference { get; init; }
     public bool ForcePathStyle { get; init; } = true;
     public bool UseHttp { get; init; }
+    public bool CreateBucketIfMissing { get; init; }
 }
 
 internal sealed class AzureBlobProviderOptions
