@@ -1,0 +1,11 @@
+services:
+  storage-api:
+    volumes:
+      - storage-data:/app/storage/dhole-storage
+
+  storage-workers:
+    volumes:
+      - storage-data:/app/storage/dhole-storage
+
+volumes:
+  storage-data:
