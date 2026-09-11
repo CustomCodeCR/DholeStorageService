@@ -13,6 +13,7 @@ concurrency:
 env:
   COMPOSE_FILE: .dhole-system/deploy/docker-compose.services.yml
   COMPOSE_OVERRIDE: .dhole-system/deploy/docker-compose.staging.yml
+  STORAGE_PERSISTENCE_FILE: .github/storage-persistence.compose.yml
   DHOLE_IMAGE_TAG: staging
   DHOLE_NETWORK: dhole-staging
   COMPOSE_PROJECT: dhole-staging
@@ -29,7 +30,7 @@ jobs:
           test -f /opt/dhole/.env.staging
           echo "DHOLE_ENV_FILE=/opt/dhole/.env.staging" >> "$GITHUB_ENV"
       - name: Verify staging server
-        run: docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" config -q
+        run: docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -f "$STORAGE_PERSISTENCE_FILE" -p "$COMPOSE_PROJECT" config -q
       - name: Build images
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,7 +42,7 @@ jobs:
       - name: Deploy Storage staging
         run: |
           set -euo pipefail
-          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never storage-api storage-workers
-          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -p "$COMPOSE_PROJECT" ps storage-api storage-workers
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -f "$STORAGE_PERSISTENCE_FILE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never storage-api storage-workers
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$COMPOSE_OVERRIDE" -f "$STORAGE_PERSISTENCE_FILE" -p "$COMPOSE_PROJECT" ps storage-api storage-workers
       - name: Cleanup old images
         run: docker image prune -f
