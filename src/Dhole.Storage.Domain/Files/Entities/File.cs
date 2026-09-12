@@ -187,6 +187,12 @@ public sealed class File : SoftDeletableAggregateRoot<Guid>
         );
     }
 
+    public void UpdateMetadata(string? metadataJson, Guid? changedBy)
+    {
+        MetadataJson = string.IsNullOrWhiteSpace(metadataJson) ? null : metadataJson.Trim();
+        MarkAsUpdated(DateTime.UtcNow, changedBy?.ToString());
+    }
+
     public void Delete(Guid? deletedBy)
     {
         Status = FileStatus.Deleted;

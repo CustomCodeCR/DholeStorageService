@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dhole.Storage.Application\Dhole.Storage.Application.csproj" />
     <ProjectReference Include="..\..\src\Dhole.Storage.Domain\Dhole.Storage.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Dhole.Storage.Infrastructure\Dhole.Storage.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
