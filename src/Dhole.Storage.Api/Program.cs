@@ -52,6 +52,7 @@ builder.Services.AddApplication();
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<StorageFileApplicationService>();
+builder.Services.AddScoped<MarketingStorageApplicationService>();
 builder.Services.AddScoped<StorageProviderApplicationService>();
 
 var app = builder.Build();
@@ -79,6 +80,7 @@ app.MapGet(
 ).AllowAnonymous();
 
 app.MapStorageEndpoints();
+app.MapMarketingStorageEndpoints();
 app.MapStorageEnvironmentEndpoints();
 
 using (var scope = app.Services.CreateScope())
