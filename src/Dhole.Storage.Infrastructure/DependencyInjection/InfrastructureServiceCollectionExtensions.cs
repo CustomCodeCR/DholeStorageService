@@ -2,9 +2,11 @@ using CustomCodeFramework.Auth.DependencyInjection;
 using CustomCodeFramework.Mongo.DependencyInjection;
 using CustomCodeFramework.Redis.DependencyInjection;
 using Dhole.Storage.Application.Abstractions.Cache;
+using Dhole.Storage.Application.Abstractions.Media;
 using Dhole.Storage.Application.Abstractions.Mongo;
 using Dhole.Storage.Application.Abstractions.Storage;
 using Dhole.Storage.Infrastructure.Cache;
+using Dhole.Storage.Infrastructure.Media;
 using Dhole.Storage.Infrastructure.Mongo;
 using Dhole.Storage.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication;
@@ -53,6 +55,7 @@ public static class InfrastructureServiceCollectionExtensions
             sp.GetRequiredService<AzureBlobStorageObjectStore>()
         );
         services.AddSingleton<IStorageObjectStoreResolver, StorageObjectStoreResolver>();
+        services.AddSingleton<IMarketingMediaProcessor, MarketingMediaProcessor>();
 
         services.AddScoped<IStorageCacheService, StorageCacheService>();
         services.AddScoped<IFileMetadataSnapshotWriter, FileMetadataSnapshotWriter>();
