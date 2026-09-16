@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Dhole.Storage.Api.Authorization;
 using Dhole.Storage.Api.Services;
 using Dhole.Storage.Domain.Shared;
 
@@ -21,15 +22,6 @@ public static class MarketingStorageEndpoints
             {
                 try
                 {
-                    if (httpContext.User.Identity?.IsAuthenticated == true
-                        && !HasScope(httpContext, StorageConstants.Scopes.FilesCreate))
-                    {
-                        return Results.Problem(
-                            statusCode: StatusCodes.Status403Forbidden,
-                            title: "Storage.Forbidden",
-                            detail: $"Se requiere el scope {StorageConstants.Scopes.FilesCreate}.");
-                    }
-
                     if (!request.HasFormContentType)
                     {
                         return Results.Problem(
@@ -100,7 +92,7 @@ public static class MarketingStorageEndpoints
                 }
             })
             .DisableAntiforgery()
-            .AllowAnonymous();
+            .RequireScope(StorageConstants.Scopes.FilesCreate);
 
         return app;
     }
@@ -111,14 +103,6 @@ public static class MarketingStorageEndpoints
             ?? context.User.FindFirstValue("sub")
             ?? context.User.FindFirstValue("userId");
         return Guid.TryParse(raw, out var id) ? id : null;
-    }
-
-    private static bool HasScope(HttpContext context, string requiredScope)
-    {
-        var values = context.User.FindAll("scope").Select(x => x.Value)
-            .Concat(context.User.FindAll("scp").Select(x => x.Value));
-        return values.SelectMany(x => x.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-            .Any(x => string.Equals(x, requiredScope, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string? NullIfWhiteSpace(string value)
