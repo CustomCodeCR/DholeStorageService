@@ -71,6 +71,44 @@ public sealed class StorageFileApplicationService(
                     x => x.Id == existing.ProviderId,
                     cancellationToken
                 );
+            var existingObjectStore = objectStoreResolver.Resolve(existingProvider.ProviderType);
+            var physicalObjectExists = await existingObjectStore.ExistsAsync(
+                existing.Path,
+                existingProvider.Configuration,
+                cancellationToken
+            );
+
+            if (!physicalObjectExists)
+            {
+                logger.LogWarning(
+                    "El registro {FileId} existe pero el objeto físico {StoragePath} no. Se intentará reparar desde el archivo recibido.",
+                    existing.Id,
+                    existing.Path
+                );
+
+                await using var repairStream = new MemoryStream(bytes, writable: false);
+                await existingObjectStore.WriteAsync(
+                    existing.Path,
+                    repairStream,
+                    existing.ContentType,
+                    existingProvider.Configuration,
+                    cancellationToken
+                );
+
+                await EnsurePhysicalObjectExistsAsync(
+                    existingObjectStore,
+                    existing.Path,
+                    existingProvider.Configuration,
+                    cancellationToken
+                );
+
+                logger.LogInformation(
+                    "Se reparó el objeto físico del archivo {FileId} en {StoragePath}.",
+                    existing.Id,
+                    existing.Path
+                );
+            }
+
             return ToStoredResponse(existing, existingProvider);
         }
 
@@ -95,6 +133,13 @@ public sealed class StorageFileApplicationService(
             storagePath,
             uploadStream,
             contentType,
+            provider.Configuration,
+            cancellationToken
+        );
+
+        await EnsurePhysicalObjectExistsAsync(
+            objectStore,
+            storagePath,
             provider.Configuration,
             cancellationToken
         );
@@ -210,6 +255,13 @@ public sealed class StorageFileApplicationService(
             storagePath,
             uploadStream,
             contentType,
+            provider.Configuration,
+            cancellationToken
+        );
+
+        await EnsurePhysicalObjectExistsAsync(
+            objectStore,
+            storagePath,
             provider.Configuration,
             cancellationToken
         );
@@ -667,6 +719,27 @@ public sealed class StorageFileApplicationService(
         catch (JsonException exception)
         {
             throw new InvalidOperationException("MetadataJson debe contener JSON válido.", exception);
+        }
+    }
+
+    private static async Task EnsurePhysicalObjectExistsAsync(
+        IStorageObjectStore objectStore,
+        string path,
+        string? providerConfiguration,
+        CancellationToken cancellationToken
+    )
+    {
+        if (
+            !await objectStore.ExistsAsync(
+                path,
+                providerConfiguration,
+                cancellationToken
+            )
+        )
+        {
+            throw new IOException(
+                $"Storage no pudo confirmar la persistencia física del objeto '{path}'."
+            );
         }
     }
 
