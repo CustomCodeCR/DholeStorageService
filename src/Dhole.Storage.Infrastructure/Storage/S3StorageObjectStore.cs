@@ -71,18 +71,31 @@ public sealed class S3StorageObjectStore : IStorageObjectStore
     {
         var options = GetOptions(providerConfiguration);
         using var client = CreateClient(options);
-        using var response = await client.GetObjectAsync(
-            new GetObjectRequest
-            {
-                BucketName = options.BucketName,
-                Key = NormalizePath(path),
-            },
-            cancellationToken
-        );
+        var key = NormalizePath(path);
 
-        using var memory = new MemoryStream();
-        await response.ResponseStream.CopyToAsync(memory, cancellationToken);
-        return new StorageObjectReadResult(memory.ToArray(), response.Headers.ContentType);
+        try
+        {
+            using var response = await client.GetObjectAsync(
+                new GetObjectRequest
+                {
+                    BucketName = options.BucketName,
+                    Key = key,
+                },
+                cancellationToken
+            );
+
+            using var memory = new MemoryStream();
+            await response.ResponseStream.CopyToAsync(memory, cancellationToken);
+            return new StorageObjectReadResult(memory.ToArray(), response.Headers.ContentType);
+        }
+        catch (AmazonS3Exception exception) when (IsMissingObject(exception))
+        {
+            throw new FileNotFoundException(
+                $"El archivo físico no existe en el almacenamiento S3/MinIO. Bucket: '{options.BucketName}', Key: '{key}'.",
+                key,
+                exception
+            );
+        }
     }
 
     public async Task DeleteAsync(
@@ -124,7 +137,7 @@ public sealed class S3StorageObjectStore : IStorageObjectStore
             );
             return true;
         }
-        catch (AmazonS3Exception exception) when ((int)exception.StatusCode == 404)
+        catch (AmazonS3Exception exception) when (IsMissingObject(exception))
         {
             return false;
         }
@@ -221,6 +234,14 @@ public sealed class S3StorageObjectStore : IStorageObjectStore
 
         var value = Environment.GetEnvironmentVariable(environmentReference.Trim());
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static bool IsMissingObject(AmazonS3Exception exception)
+    {
+        return (int)exception.StatusCode == 404
+            || string.Equals(exception.ErrorCode, "NoSuchKey", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(exception.ErrorCode, "NoSuchObject", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(exception.ErrorCode, "NotFound", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsMissingBucket(AmazonS3Exception exception)
