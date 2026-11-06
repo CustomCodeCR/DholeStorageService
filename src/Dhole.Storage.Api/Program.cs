@@ -55,6 +55,13 @@ builder.Services.AddScoped<StorageFileApplicationService>();
 builder.Services.AddScoped<StorageProviderApplicationService>();
 
 var app = builder.Build();
+// Attach running Storage assembly version to health-check responses.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.Value?.StartsWith("/health", StringComparison.OrdinalIgnoreCase) == true)
+        context.Response.Headers["X-Dhole-Version"] = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+    await next();
+});
 
 app.UseCors(CorsPolicyName);
 app.UseAuthentication();
