@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.2] - 2026-11-05
+
+- Tolera fallos transitorios de DNS durante la clonación de DholeSystem mediante reintentos acotados en staging y producción.
+
 ## [1.2.1] - 2026-11-05
 
 - Consolida SemVer por componente y despliegues automáticos a staging/producción por push.
