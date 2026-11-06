@@ -25,7 +25,19 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf .dhole-system
-          git clone --depth 1 --branch master https://github.com/CustomCodeCR/DholeSystem.git .dhole-system
+          for attempt in 1 2 3 4 5; do
+            if git clone --depth 1 --branch master https://github.com/CustomCodeCR/DholeSystem.git .dhole-system; then
+              break
+            fi
+            rm -rf .dhole-system
+            if (( attempt == 5 )); then
+              echo '::error::DholeSystem checkout unavailable after 5 attempts; inspect runner DNS and HTTPS.'
+              getent ahostsv4 github.com || true
+              exit 1
+            fi
+            echo "::warning::Transient checkout failure, retry $attempt/5"
+            sleep $((attempt * 5))
+          done
           test -f /opt/dhole/.env.staging
           echo "DHOLE_ENV_FILE=/opt/dhole/.env.staging" >> "$GITHUB_ENV"
       - name: Verify staging server
