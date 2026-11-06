@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.2] - 2026-11-05
+
+- Retries DholeSystem clone on transient GitHub DNS failures in staging and production.
+
+
 ## [1.2.1] - 2026-11-05
 
 - Actualiza versión SemVer del componente y metadatos del ecosistema Dhole 1.3.1.
