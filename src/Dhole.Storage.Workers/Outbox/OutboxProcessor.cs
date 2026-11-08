@@ -92,6 +92,8 @@ internal sealed class OutboxProcessor(
 
     private string ResolveStreamName(string eventName)
     {
+        if (eventName == "storage.file.changed.v1")
+            return "dhole.storage.realtime.v1";
         return configuration[$"Redis:Streams:Destinations:{eventName}"]
             ?? configuration["Redis:Streams:DefaultStreamName"]
             ?? "dhole.storage.events";
