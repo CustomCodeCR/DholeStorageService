@@ -1,0 +1,40 @@
+name: Realtime F6.07 Storage durable file signal (isolated)
+on:
+  push:
+    branches: [feature/dhole-realtime-universal-rt-20261107-01]
+    paths:
+      - 'src/Dhole.Storage.Persistence/DbContexts/ServiceDbContext.cs'
+      - 'src/Dhole.Storage.Persistence/Messaging/StorageRealtimeInvalidation.cs'
+      - 'src/Dhole.Storage.Workers/Outbox/OutboxProcessor.cs'
+      - 'tests/Dhole.Storage.IntegrationTests/F6StorageRealtimeContractTests.cs'
+      - 'version.json'
+      - 'Directory.Build.targets'
+      - 'CHANGELOG.md'
+      - '.github/workflows/realtime-f6-storage.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+jobs:
+  storage-f6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify release SemVer
+        run: python3 scripts/verify_dhole_version.py
+      - name: Authenticate package feed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: dotnet nuget update source github --username github-actions --password "$GITHUB_TOKEN" --store-password-in-clear-text --configfile NuGet.Config
+      - name: Restore Storage API and integration tests
+        run: dotnet restore tests/Dhole.Storage.IntegrationTests/Dhole.Storage.IntegrationTests.csproj --configfile NuGet.Config
+      - name: Build Storage API and integration suite
+        run: dotnet build tests/Dhole.Storage.IntegrationTests/Dhole.Storage.IntegrationTests.csproj -c Release --no-restore
+      - name: Build Storage Outbox worker
+        run: dotnet build src/Dhole.Storage.Workers/Dhole.Storage.Workers.csproj -c Release
+      - name: Test scoped file invalidation and security flags
+        run: dotnet test tests/Dhole.Storage.IntegrationTests/Dhole.Storage.IntegrationTests.csproj -c Release --no-build --filter FullyQualifiedName~F6StorageRealtimeContractTests -- RunConfiguration.TreatNoTestsAsError=true
