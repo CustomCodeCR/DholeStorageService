@@ -9,10 +9,12 @@ using Dhole.Storage.Domain.Providers.Entities;
 using Dhole.Storage.Persistence.Auditing;
 using Dhole.Storage.Persistence.Messaging;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Dhole.Storage.Persistence.DbContexts;
 
-public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
+public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options,
+    IConfiguration? realtimeConfiguration = null)
     : AppDbContextBase(options)
 {
     private const string SourceService = "DholeStorageService";
@@ -28,12 +30,14 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        AppendStorageFileInvalidations();
         AddDomainEventsToOutbox();
         return base.SaveChangesAsync(cancellationToken);
     }
 
     public override int SaveChanges()
     {
+        AppendStorageFileInvalidations();
         AddDomainEventsToOutbox();
         return base.SaveChanges();
     }
@@ -48,6 +52,48 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options)
 
         modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
         modelBuilder.ApplyConfiguration(new InboxMessageConfiguration());
+    }
+
+    private void AppendStorageFileInvalidations()
+    {
+        if (!StorageRealtimeInvalidation.IsEnabled(realtimeConfiguration))
+            return;
+        ChangeTracker.DetectChanges();
+        var ids = new HashSet<Guid>();
+        foreach (var entry in ChangeTracker.Entries()
+            .Where(x => x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted))
+        {
+            var fileId = entry.Entity switch
+            {
+                Dhole.Storage.Domain.Files.Entities.File file => file.Id,
+                FileVersion version => version.FileId,
+                FileReference reference => reference.FileId,
+                _ => Guid.Empty
+            };
+            if (fileId != Guid.Empty)
+                ids.Add(fileId);
+        }
+        foreach (var fileId in ids)
+        {
+            var eventId = Guid.NewGuid();
+            var now = DateTimeOffset.UtcNow;
+            var correlationId =
+                (AuditExecutionContextAccessor.Current?.CorrelationId ?? eventId).ToString("D");
+            OutboxMessages.Add(new OutboxMessage
+            {
+                EventId = eventId,
+                EventType = StorageRealtimeInvalidation.Type,
+                EventName = StorageRealtimeInvalidation.Type,
+                SourceService = SourceService,
+                PayloadJson = StorageRealtimeInvalidation.Serialize(
+                    eventId, fileId, StorageRealtimeInvalidation.NextVersionHint(),
+                    now, correlationId),
+                CorrelationId = correlationId,
+                Status = OutboxMessageStatus.Pending,
+                RetryCount = 0,
+                CreatedAtUtc = now.UtcDateTime
+            });
+        }
     }
 
     private void AddDomainEventsToOutbox()
