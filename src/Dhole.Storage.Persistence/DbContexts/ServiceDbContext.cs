@@ -61,7 +61,7 @@ public sealed class ServiceDbContext(DbContextOptions<ServiceDbContext> options,
         ChangeTracker.DetectChanges();
         var ids = new HashSet<Guid>();
         foreach (var entry in ChangeTracker.Entries()
-            .Where(x => x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted))
+            .Where(x => x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted).ToArray())
         {
             var fileId = entry.Entity switch
             {
