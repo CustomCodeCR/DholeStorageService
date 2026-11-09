@@ -12,6 +12,7 @@ concurrency:
   cancel-in-progress: false
 env:
   COMPOSE_FILE: .dhole-system/deploy/docker-compose.services.yml
+  STORAGE_PERSISTENCE_FILE: .github/storage-persistence.compose.yml
   DHOLE_IMAGE_TAG: latest
   DHOLE_NETWORK: dhole
   COMPOSE_PROJECT: dhole
@@ -30,17 +31,17 @@ jobs:
             fi
             rm -rf .dhole-system
             if (( attempt == 5 )); then
-              echo '::error::DholeSystem checkout unavailable after 5 attempts; verify runner DNS and HTTPS connectivity.'
+              echo '::error::DholeSystem checkout unavailable after 5 attempts; inspect runner DNS and HTTPS.'
               getent ahostsv4 github.com || true
               exit 1
             fi
-            echo "::warning::Transient DholeSystem clone failure, retry $attempt/5"
+            echo "::warning::Transient checkout failure, retry $attempt/5"
             sleep $((attempt * 5))
           done
           test -f /opt/dhole/.env
           echo "DHOLE_ENV_FILE=/opt/dhole/.env" >> "$GITHUB_ENV"
       - name: Verify production server
-        run: docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" config -q
+        run: docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$STORAGE_PERSISTENCE_FILE" -p "$COMPOSE_PROJECT" config -q
       - name: Build images
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,12 +53,7 @@ jobs:
       - name: Deploy Storage
         run: |
           set -euo pipefail
-          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never storage-api storage-workers
-          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -p "$COMPOSE_PROJECT" ps storage-api storage-workers
-      - name: Keep only master and develop branches
-        run: |
-          set -euo pipefail
-          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
-          while IFS= read -r branch; do case "$branch" in master|develop) continue ;; esac; git push origin --delete "$branch"; done < <(git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin | grep -v '^HEAD$' || true)
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$STORAGE_PERSISTENCE_FILE" -p "$COMPOSE_PROJECT" up -d --no-deps --force-recreate --pull never storage-api storage-workers
+          docker compose --env-file "$DHOLE_ENV_FILE" -f "$COMPOSE_FILE" -f "$STORAGE_PERSISTENCE_FILE" -p "$COMPOSE_PROJECT" ps storage-api storage-workers
       - name: Cleanup old images
         run: docker image prune -f
