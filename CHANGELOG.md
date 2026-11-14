@@ -1,3 +1,8 @@
+## [1.5.0] - 2026-11-14 (API Manager discovery)
+
+- MINOR: rutas HTTP de Storage disponibles al catálogo administrativo de APIs con autenticación; no altera el acceso a archivos.
+- Global Dhole 1.56.0, mantiene compatibilidad REST y realtime.
+
 # Changelog
 
 ## [1.4.0] - 2026-11-09 (NotificationsHub universal realtime pilot; candidate)
