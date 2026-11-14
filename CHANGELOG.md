@@ -1,3 +1,7 @@
+## [1.6.0] - 2026-11-14 (API Manager discovery)
+
+- JWT and integrations.thirdparty.manage-protected runtime route inventory for API Manager; no automatic external publication.
+
 ## [1.5.0] - 2026-11-14 (API Manager discovery)
 
 - MINOR: rutas HTTP de Storage disponibles al catálogo administrativo de APIs con autenticación; no altera el acceso a archivos.

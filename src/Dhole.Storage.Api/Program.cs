@@ -1,3 +1,4 @@
+using Dhole.RouteDiscovery;
 using CustomCodeFramework.Core.Abstractions;
 using Dhole.Storage.Api.Endpoints;
 using Dhole.Storage.Api.Middleware;
@@ -56,6 +57,7 @@ builder.Services.AddScoped<MarketingStorageApplicationService>();
 builder.Services.AddScoped<StorageProviderApplicationService>();
 
 var app = builder.Build();
+app.MapDholeRouteManifest();
 
 app.UseCors(CorsPolicyName);
 app.UseAuthentication();
