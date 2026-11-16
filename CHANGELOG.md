@@ -1,3 +1,7 @@
+## [1.6.0] - 2026-11-16 (Catálogo de rutas seguro)
+
+- MINOR DH-20261116-API-ROUTES-DEFAULTS-165: exige autorización JWT además del scope integrations.thirdparty.manage para el inventario de rutas HTTP existente, compatible con Dhole API Manager. No publica datos ni elimina seguridad del servicio.
+
 ## [1.5.0] - 2026-11-14 (API Manager discovery)
 
 - MINOR: rutas HTTP de Storage disponibles al catálogo administrativo de APIs con autenticación; no altera el acceso a archivos.
