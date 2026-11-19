@@ -16,4 +16,8 @@ public sealed record FileDto(
     DateTime CreatedAt,
     IReadOnlyCollection<FileReferenceDto> References,
     IReadOnlyCollection<FileVersionDto> Versions
-)\n{\n    // Keep the legacy JSON field while exposing the correctly spelled metadataJson.\n    public string? MetadataJson => MetadatJson;\n}\n
+)
+{
+    // Keep the legacy JSON field while exposing the correctly spelled metadataJson.
+    public string? MetadataJson => MetadatJson;
+}
